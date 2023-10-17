@@ -1,0 +1,33 @@
+'-----проверяет существует ли лист----------
+Public Function SheetExist(wb As Workbook, name As String) As Boolean
+wb.Activate
+Dim sh As Worksheet
+On Error Resume Next
+Set sh = Sheets(name)
+SheetExist = Not sh Is Nothing
+Set sh = Nothing
+End Function
+'-----сортировка 2 мерного массива методом пузыря------------------------------------
+Sub SortBubble(list() As String)
+Dim first, last, i, j As Integer
+Dim temp, temp2 As String
+
+first = LBound(list())
+last = UBound(list())
+For i = first To last
+For j = i + 1 To last
+If list(i, 2) > list(j, 2) Then
+temp = list(j, 2)
+temp2 = list(j, 1)
+list(j, 2) = list(i, 2)
+list(j, 1) = list(i, 1)
+list(i, 2) = temp
+list(i, 1) = temp2
+End If
+Next j
+Next i
+'For i = LBound(list()) To UBound(list())
+'MsgBox list(i)
+'Next i
+End Sub
+'--------------------------------------------------

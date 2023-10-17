@@ -1,0 +1,397 @@
+Option Explicit
+Dim newList As Worksheet
+Sub renderData()
+Dim month_, year, nameSheet As String
+Dim otdel, weekends, workdays, chts As String
+Dim rowCount, columnCount, i, n, d As Long
+
+Dim sotr() As String
+Dim element, element2, myRange As Range
+Dim daysCount As Date
+Dim myDate As Date
+Dim daysOfMonth As Integer
+Dim summaPoOtdelu, itogo As String
+'óáèðàåì ìåðöàíèå ýêðàíà
+Application.ScreenUpdating = False
+
+With ThisWorkbook.Sheets("øòàò")
+month_ = .Cells(1, 8).Value
+year = .Cells(2, 8).Value
+
+rowCount = .Cells(Rows.Count, 1).End(xlUp).Row
+columnCount = .Cells(1, Columns.Count).End(xlToLeft).Column - 3
+'Debug.Print rowCount & " " & columnCount
+
+'çàïîëíÿåì ìàññèâ sotr
+ReDim sotr(.Cells(3, 1).Row To rowCount, Cells(3, 1).Column To columnCount + 1)
+For i = LBound(sotr()) To UBound(sotr())
+sotr(i, 1) = .Cells(i, 1).Value
+sotr(i, 2) = .Cells(i, 2).Value
+sotr(i, 3) = .Cells(i, 3).Value
+sotr(i, 4) = .Cells(i, 4).Value
+sotr(i, 5) = .Cells(i, 5).Value
+sotr(i, 6) = 8
+Next i
+'çàïîëíÿåì ìàññèâ sotr
+End With
+'ñîðòèðóåì
+Call SortBubble(sotr())
+
+nameSheet = month_ & " " & year
+'ñîçäàëè íîâûé ëèñò
+If Not SheetExist(ThisWorkbook, nameSheet) Then
+Set newList = ThisWorkbook.Worksheets.Add(after:=ThisWorkbook.Sheets("øòàò"))
+newList.name = nameSheet
+newList.Activate
+ActiveWindow.Zoom = 80
+Else
+'åñëè ëèñò ñóùåñòâóåò äåëàåì åãî àêòèâíûì
+Set newList = ThisWorkbook.Worksheets(nameSheet)
+newList.Activate
+ActiveWindow.Zoom = 80
+End If
+'ñîçäàëè íîâûé ëèñò
+With newList
+'çàïîëíèëè øàïêó
+.Cells(2, 2).Value = "ìåñÿö": .Cells(2, 2).Offset(0, 1).Value = month_
+.Cells(3, 2).Value = "ãîä": .Cells(3, 2).Offset(0, 1).Value = year
+.Cells(3, 4).Value = DateValue("01." & month_ & "." & year) 'äàòà
+.Cells(5, 1).Value = "Òàá. ¹"
+.Cells(5, 2).Value = "ÔÈÎ"
+.Cells(5, 3).Value = "Äîëæíîñòü"
+.Cells(5, 4).Value = "×ÒÑ ðóá/÷àñ"
+.Cells(7, 1).Value = "ÈÒÎÃÎ"
+'âûâîäèì äàííûå
+.Cells(6, 5).FormulaR1C1 = "=DAY(EOMONTH(R[-3]C[-1],0))"
+daysCount = .Cells(6, 5).Value + 1 'ïîëó÷èëè êîë-âî äíåé
+daysOfMonth = Day(DateValue(daysCount))
+'Debug.Print Day(DateValue(daysCount))
+.Cells(3, 4).Value = "": .Cells(6, 5).Value = ""  'î÷èñòèëè âñïîìîãàòåëüíûå ÿ÷åéêè
+n = 0
+For i = LBound(sotr()) To UBound(sotr())
+.Cells(5 + i + n, 1).Value = sotr(i, 3) 'îòäåë
+.Cells(6 + i + n, 1).Value = sotr(i, 1) 'òàá íîìåð
+.Cells(6 + i + n, 2).Value = sotr(i, 2) 'ôèî
+.Cells(6 + i + n, 3).Value = sotr(i, 4) 'äîëæíîñòü
+.Cells(6 + i + n, 4).Value = sotr(i, 5) '÷òñ
+'.Cells(6 + i + n, 5).Value = sotr(i, 6) '8 ÷àñ ðàá äåíü
+For d = 1 To Day(DateValue(daysCount))
+.Cells(6 + i + n, 4 + d).Value = sotr(i, 6) '8 ÷àñ ðàá äåíü
+Next d
+n = n + 1
+Next i
+
+'.Range("A8:F" & i + n + 4).Select
+.Range(.Cells(8, 1), .Cells(.Cells(Rows.Count, 1).End(xlUp).Row, .Cells(.Cells(Rows.Count, 1).End(xlUp).Row _
+, Columns.Count).End(xlToLeft).Column)).Select
+'óäàëÿåì äóáëèêàòû
+Selection.RemoveDuplicates Columns:=1
+ActiveCell.Select
+'rowCount = .Cells(Rows.Count, 3).End(xlUp).Row
+'.Range("C9:C" & rowCount).Select
+'Set myRange = Selection
+'
+'For Each element In myRange
+'otdel = InStr(element.Offset(0, -2).Value, "Îòäåë")
+'If element = "" & otdel = "0" Then
+''element.Delete
+'End If
+'Next
+'daysCount = Day(daysCount)
+
+
+ReDim arrDays(1 To daysOfMonth)
+
+For i = 1 To UBound(arrDays())
+arrDays(i) = i
+Next
+
+.Cells(6, 5).Resize(, daysOfMonth) = arrDays 'âûâåëè ìàññèâ äíåé â ìåñÿöå
+'Debug.Print month(DateValue("01." & month_ & "." & year))
+
+Select Case .Cells(2, 3).Value
+Case "ÿíâàðü"
+.Cells(2, 5).Value = 1
+Case "ôåâðàëü"
+.Cells(2, 5).Value = 2
+Case "ìàðò"
+.Cells(2, 5).Value = 3
+Case "àïðåëü"
+.Cells(2, 5).Value = 4
+Case "ìàé"
+.Cells(2, 5).Value = 5
+Case "èþíü"
+.Cells(2, 5).Value = 6
+Case "èþëü"
+.Cells(2, 5).Value = 7
+Case "àâãóñò"
+.Cells(2, 5).Value = 8
+Case "ñåíòÿáðü"
+.Cells(2, 5).Value = 9
+Case "îêòÿáðü"
+.Cells(2, 5).Value = 10
+Case "íîÿáðü"
+.Cells(2, 5).Value = 11
+Case Else
+.Cells(2, 5).Value = 12
+End Select
+
+i = 5
+Do While .Cells(6, i) <> ""
+myDate = DateValue("" & year & "," & "" & .Cells(2, 5).Value & "," & "" & .Cells(6, i).Value)
+.Cells(6, i).Offset(-1, 0).NumberFormat = "General" 'óñòàíîâèëè îáùèé ôîðìàò ÿ÷ååê
+.Cells(6, i).Offset(-1, 0).Value = Weekday(myDate - 1)
+
+Select Case .Cells(6, i).Offset(-1, 0).Value
+Case 1
+.Cells(6, i).Offset(-1, 0).Value = "Ïí"
+Case 2
+.Cells(6, i).Offset(-1, 0).Value = "Âò"
+Case 3
+.Cells(6, i).Offset(-1, 0).Value = "Ñð"
+Case 4
+.Cells(6, i).Offset(-1, 0).Value = "×ò"
+Case 5
+.Cells(6, i).Offset(-1, 0).Value = "Ïò"
+Case 6
+.Cells(6, i).Offset(-1, 0).Value = "Ñá"
+Case 7
+.Cells(6, i).Offset(-1, 0).Value = "Âñ"
+End Select
+
+i = i + 1
+Loop
+'âûâåëè äíè íåäåëè
+.Cells(2, 5).Value = ""
+'çàïîëíÿåì ïðàçäíèêè
+i = 5
+Select Case month_
+Case "ÿíâàðü"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 1 Or .Cells(6, i) = 2 Or .Cells(6, i) = 3 Or .Cells(6, i) = 4 _
+Or .Cells(6, i) = 5 Or .Cells(6, i) = 6 Or .Cells(6, i) = 7 Or .Cells(6, i) = 8 _
+Or .Cells(6, i) = 9 Or .Cells(6, i) = 10 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "ôåâðàëü"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 23 Or .Cells(6, i) = 24 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "ìàðò"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 8 Or .Cells(6, i) = 9 Or .Cells(6, i) = 10 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "àïðåëü"
+'Do While .Cells(6, i) <> ""
+'If .Cells(6, i) = 28 Or .Cells(6, i) = 29 Or .Cells(6, i) = 30 Then
+'.Cells(6, i).Offset(-2, 0).Value = "ïð"
+'End If
+'i = i + 1
+'Loop
+Case "ìàé"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 1 Or .Cells(6, i) = 9 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "èþíü"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 10 Or .Cells(6, i) = 11 Or .Cells(6, i) = 12 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "èþëü"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 10 Or .Cells(6, i) = 11 Or .Cells(6, i) = 12 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+Case "íîÿáðü"
+Do While .Cells(6, i) <> ""
+If .Cells(6, i) = 3 Or .Cells(6, i) = 6 Then
+.Cells(6, i).Offset(-2, 0).Value = "ïð"
+End If
+i = i + 1
+Loop
+End Select
+'çàïîëíÿåì âûõîäíûå
+i = 5
+Do While .Cells(5, i) <> ""
+If .Cells(5, i) = "Ñá" Or .Cells(5, i) = "Âñ" Then
+.Cells(5, i).Offset(-1, 0).Value = "â"
+End If
+i = i + 1
+Loop
+'óäàëÿåì èç òàáåëÿ ïðàçäíè÷íûå è âûõîäíûå äíè
+For Each element In Range(.Cells(4, 5), .Cells(4, daysOfMonth + 5))
+If element.Value = "â" Or element.Value = "ïð" Then
+element.Offset(5, 0).Resize(.Cells(Rows.Count, 1).End(xlUp).Row).Select
+Selection.ClearContents
+End If
+Next
+.Cells(1, 1).Activate
+
+
+'Âûâîäèì èòîãîâóþ øàïêó
+columnCount = .Cells(6, Columns.Count).End(xlToLeft).Column
+.Cells(5, columnCount + 1).Value = "×àñîâ â áóäíè"
+.Cells(5, columnCount + 2).Value = "×àñîâ â âûõ."
+.Cells(5, columnCount + 3).Value = "Äíåé îòðàá."
+.Cells(5, columnCount + 4).Value = "Çàð. ïëàò."
+'Èäåì ïî ñïèñêó ñîòðóäíèêîâ äëÿ çàïîëíåíèÿ èòîãîâûõ ôîðìóë
+
+rowCount = .Cells(Rows.Count, 1).End(xlUp).Row
+columnCount = .Cells(5, Columns.Count).End(xlToLeft).Column - 5
+workdays = ""
+weekends = ""
+chts = ""
+
+For Each element In .Range("A8:A" & rowCount)
+If InStr(element, "Î") Then
+'Debug.Print summaPoOtdelu
+'element.Offset(0, daysOfMonth + 7).Value = summaPoOtdelu
+'summaPoOtdelu = ""
+
+Else
+'summaPoOtdelu = summaPoOtdelu & ";" & element.Offset(, daysOfMonth + 7).Address
+chts = element.Offset(, 3).Value
+'element.Offset(0, daysOfMonth + 4).FormulaR1C1 = "=SUM(RC[" & -daysOfMonth & "]:RC[-1])"
+For Each element2 In .Range(element.Offset(, 4), element.Offset(, columnCount))
+If element2.Value <> "" Then
+workdays = workdays & ";" & element2.Address
+'âûâîäèì ñóììó ðàá äíåé
+element.Offset(0, daysOfMonth + 4).FormulaLocal = "=ÑÓÌÌ(" & workdays & ")"
+Else
+'âûâîäèì ñóììó âûõîäíûõ
+weekends = weekends & ";" & element2.Address
+element.Offset(0, daysOfMonth + 5).FormulaLocal = "=ÑÓÌÌ(" & weekends & ")"
+element.Offset(0, daysOfMonth + 6).FormulaR1C1 = "=SUM(RC[-2]:RC[-1]) / 8"
+element.Offset(0, daysOfMonth + 7).FormulaR1C1 = "=(RC[-3] * " & chts & ") + (RC[-2] * " & chts & " * 1.5 )" 'çàð ïëàòà
+End If
+
+Next
+'summaPoOtdelu = summaPoOtdelu & ";" & element.Offset(, daysOfMonth + 7).Address
+workdays = ""
+weekends = ""
+End If
+Next
+'âûâîäèì èòîãîâûå ñóììû ïî îòäåëàì
+columnCount = 0
+columnCount = .Cells(rowCount, Columns.Count).End(xlToLeft).Column
+For i = rowCount To 8 Step -1
+If .Cells(i, columnCount).Value = "" Then
+itogo = itogo & ";" & .Cells(i, columnCount).Address
+
+.Cells(i, columnCount).FormulaLocal = "=ÑÓÌÌ(" & summaPoOtdelu & ")"
+summaPoOtdelu = ""
+Else
+'Debug.Print .Cells(i, columnCount).Value
+summaPoOtdelu = summaPoOtdelu & ";" & .Cells(i, columnCount).Address
+End If
+Next i
+'.Cells(rowCount, columnCount).Offset(1, 0).FormulaLocal = "=ÑÓÌÌ(" & itogo & ")"
+End With
+'ñòèëèçóåì
+Call renderStyle
+End Sub
+Sub renderStyle()
+Dim element As Range
+With newList
+.Columns("B").ColumnWidth = 22
+.Columns("C").ColumnWidth = 22
+.Columns("D").ColumnWidth = 13
+.Range("C2:C3").HorizontalAlignment = xlLeft
+.Range("C2:C3").Borders(xlEdgeBottom).Weight = xlThin
+.Range("C2:C3").Borders(xlInsideHorizontal).Weight = xlThin
+.Range("A5:A6").MergeCells = True
+.Range("B5:B6").MergeCells = True
+.Range("C5:C6").MergeCells = True
+.Range("D5:D6").MergeCells = True
+.Range("A5:D6").HorizontalAlignment = xlCenter
+.Range("A5:D6").VerticalAlignment = xlCenter
+.Range("A5:D6").Borders(xlInsideVertical).Weight = xlThin
+.Range("A5:D6").Borders(xlEdgeTop).Weight = xlThin
+.Range("A5:D6").Borders(xlEdgeLeft).Weight = xlThin
+.Range("A5:D6").Borders(xlEdgeRight).Weight = xlThin
+.Range("A5:D6").Borders(xlEdgeBottom).Weight = xlThin
+.Range("A5:D6").Interior.Color = RGB(226, 239, 218)
+.Range("A7:D7").MergeCells = True
+.Range("A7:D7").RowHeight = 18
+.Range("A7:D7").Interior.Color = RGB(255, 205, 204)
+.Range("A7:D7").VerticalAlignment = xlCenter
+.Range("A7:D7").Font.Bold = True
+For Each element In .Range("A8:A" & .Cells(Rows.Count, 1).End(xlUp).Row)
+If InStr(element, "Î") Then
+element.Resize(, 4).MergeCells = True
+element.Interior.Color = RGB(217, 217, 217)
+Else
+element.Resize(, 4).Borders(xlEdgeTop).Weight = xlThin
+element.Resize(, 4).Borders(xlEdgeLeft).Weight = xlThin
+element.Resize(, 4).Borders(xlEdgeRight).Weight = xlThin
+element.Resize(, 4).Borders(xlEdgeBottom).Weight = xlThin
+element.Resize(, 4).Borders(xlInsideVertical).Weight = xlThin
+End If
+Next
+End With
+End Sub
+'ñóùåñòâóåò ëè ëèñò
+Public Function SheetExist(wb As Workbook, name As String) As Boolean
+wb.Activate
+Dim sh As Worksheet
+On Error Resume Next
+Set sh = Sheets(name)
+SheetExist = Not sh Is Nothing
+Set sh = Nothing
+End Function
+'ñîðòèðîâêà 2D ìàññèâà
+Sub SortBubble(list() As String)
+Dim first, last, i, j As Integer
+Dim tabNumber, fio, otdel, dolzhnost, stavka As String
+Dim hours As Integer
+
+first = LBound(list())
+last = UBound(list())
+For i = first To last
+For j = i + 1 To last
+If list(i, 1) > list(j, 1) Then
+tabNumber = list(j, 1)
+fio = list(j, 2)
+otdel = list(j, 3)
+dolzhnost = list(j, 4)
+stavka = list(j, 5)
+hours = list(j, 6)
+list(j, 1) = list(i, 1)
+list(j, 2) = list(i, 2)
+list(j, 3) = list(i, 3)
+list(j, 4) = list(i, 4)
+list(j, 5) = list(i, 5)
+list(j, 6) = list(i, 6)
+list(i, 1) = tabNumber
+list(i, 2) = fio
+list(i, 3) = otdel
+list(i, 4) = dolzhnost
+list(i, 5) = stavka
+list(i, 6) = hours
+End If
+Next j
+Next i
+'For i = LBound(list()) To UBound(list())
+'MsgBox list(i)
+'Next i
+End Sub
+
+'Public Function daysOfMonth(dt)
+'
+'daysOfMonth = Day(DateSerial(year(dt), month(dt) + 2, 0))
+'End Function
